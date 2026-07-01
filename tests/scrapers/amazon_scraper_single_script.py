@@ -11,8 +11,6 @@ import requests, os
 from xml.dom import minidom
 from datetime import datetime as dt
 
-
-
 time_now = dt.now()
 datetime_now = time_now.strftime('%Y-%m-%d %H:%M:%S')
 HEADERS = {
