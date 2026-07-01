@@ -6,7 +6,6 @@ before running, in terminal you must install Playwright, and BeautifulSoup throu
 then run the command 'playwright install' in terminal
 """
 import re
-
 from bs4 import BeautifulSoup
 import asyncio
 from playwright.async_api import async_playwright
@@ -14,6 +13,7 @@ from playwright.async_api import async_playwright
 user_agent = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'}
 
 async def scrape_calcareers_jobs():
+    # location for Fresno County is 85, but can lose the url var if an update is made in the search
     calcareers_url = 'https://calcareers.ca.gov/CalHRPublic/Search/JobSearchResults.aspx#locid=85'
 
     async with async_playwright() as p:
@@ -29,7 +29,7 @@ async def scrape_calcareers_jobs():
         await amount_dropdown.select_option(value="100")
         county_dropdown = ccpage.locator('td[id="cphMainContent_ddlLocation_B-1"]')
         await county_dropdown.click()
-        await county_dropdown.press_sequentially("Fresno County")
+        await county_dropdown.press_sequentially("Fresno County") # since it loses the location id var
         await ccpage.keyboard.press("Enter")
         await ccpage.locator('input[value="Update Results"]').click()
 
