@@ -6,13 +6,14 @@ before running, in terminal you must install Playwright, and BeautifulSoup throu
 then run the command 'playwright install' in terminal
 """
 import re
+import pytest
 from bs4 import BeautifulSoup
 import asyncio
 from playwright.async_api import async_playwright
 
-user_agent = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'}
-
-async def scrape_calcareers_jobs():
+@pytest.mark.asyncio
+async def test_calcareers_jobs_scraper():
+    user_agent = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'}
     # location for Fresno County is 85, but can lose the url var if an update is made in the search
     calcareers_url = 'https://calcareers.ca.gov/CalHRPublic/Search/JobSearchResults.aspx#locid=85'
 
@@ -39,7 +40,7 @@ async def scrape_calcareers_jobs():
 
     calcareers_soup = BeautifulSoup(html_content_for_bs4, 'html.parser')
 
-    calcareers_job_tiles = calcareers_soup.find_all('a', id=re.compile('cphMainContent_rptResults_hlViewJobPosting'))
+    calcareers_job_tiles = calcareers_soup.find_all('div', id=re.compile('cphMainContent_rptResults_pnlCardContainer'))
     count = len(calcareers_job_tiles)
     print(f'CalCareers jobs list ({count}): ')
     if not calcareers_job_tiles:
@@ -47,14 +48,16 @@ async def scrape_calcareers_jobs():
         return
 
     for job in calcareers_job_tiles:
-        title = job.text.strip()
-        link = job.get('href')
+        title = job.find('a', id=re.compile('cphMainContent_rptResults_hlViewJobPosting')).text
+        actual_title = job.find('div', class_='working-title details row').find_all('div')[1].text.strip()
+        link = job.find('a', id=re.compile('cphMainContent_rptResults_hlViewJobPosting')).get('href').strip()
+        pay = job.find('div', class_='salary-range details row').find_all('div')[1].text.strip()
+        schedule = job.find('div', class_='schedule details row').find_all('div')[1].text.strip()
+        work_place = job.find('div', class_='telework details row').find_all('div')[1].text.strip()
+
 
         if link and not link.startswith('http'):
             link = f'https://calcareers.ca.gov{link}'
 
-        print(f'Job Title: {title}')
-        print(f'Link: {link}')
-
-if __name__ == "__main__":
-    asyncio.run(scrape_calcareers_jobs())
+        print(f'{actual_title} ({title}) | {pay} | {schedule} | {work_place}')
+        print(f'-- {link}')

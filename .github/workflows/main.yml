@@ -1,8 +1,8 @@
-name: Run Python scrapers
+name: Run Pytest tests
 
 on:
   push:
-    branches: [main]
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -26,7 +26,12 @@ jobs:
 
       - name: Run scrapers
         run: |
-          foreach ($file in Get-ChildItem -Path "tests/scrapers/*.py" -File) {
-          echo "Running file: '$($file.FullName)' "
-          python "$($file.FullName)" 
-          }
+          python -m pytest --html=report.html --self-contained-html
+          shell: pwsh
+
+      - name: Upload Test Report
+        uses: actions/upload-artificat@v4
+        if: always()
+        with:
+          name: pytest-windows-report
+          path: report.html
