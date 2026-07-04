@@ -26,16 +26,32 @@ jobs:
 
       - name: Initialize Playwright after
         run: |
+          # needed to initialize playwright and download browsers
           python -m playwright install
 
-      - name: Run scrapers
+      - name: Run Pytest and create report
         run: |
           python -m pytest --html=report.html --self-contained-html
         shell: pwsh
 
-      - name: Upload Test Report
+      - name: Upload Test Results Report
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: pytest-windows-report
           path: report.html
+
+      - name: Upload XML files created by tests
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: process-outputs
+          path: /tests/scrapers/xml/*.xml
+
+      - name: Deploy test results to GH page
+        uses: peaceiris/actions-gh-pages@v4
+        if: always()
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          publish_files: index.html
