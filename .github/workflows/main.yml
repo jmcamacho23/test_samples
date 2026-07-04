@@ -1,13 +1,13 @@
-name: Run Python scrapers
+name: Run Pytest tests
 
 on:
   push:
-    branches: [main]
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
-  run-script:
-    runs-on: ubuntu-latest
+  run-pytests:
+    runs-on: windows-latest
 
     steps:
       - name: Checkout main branch repo
@@ -22,12 +22,20 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt fi
+          if (Test-Path "${{ github.workspace }}/requirements.txt" ) { pip install -r "${{ github.workspace }}/requirements.txt" }
+
+      - name: Initialize Playwright after
+        run: |
+          python -m playwright install
 
       - name: Run scrapers
         run: |
-          for file in tests/scrapers/*.py; do
-          if [ -f "$file"]; then
-          echo "Running file: '$file' "
-          python "$file" fi
-          done
+          python -m pytest --html=report.html --self-contained-html
+        shell: pwsh
+
+      - name: Upload Test Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pytest-windows-report
+          path: report.html
