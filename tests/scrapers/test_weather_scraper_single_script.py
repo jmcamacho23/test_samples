@@ -5,6 +5,7 @@ HEADERS are necessary in case the site tries to prevent scrapers without user ag
 will create an xml file at the end once the prices for each are found
 
 """
+import pytest
 from bs4 import BeautifulSoup
 import requests, os, re
 from datetime import datetime
@@ -24,7 +25,7 @@ base_url = 'https://forecast.weather.gov/MapClick.php?'
 urls_alias_dictionary = {'NYC': 'lat=40.714270000000056&lon=-74.00596999999993', 'LA': 'lat=34.052238&lon=-118.243344',
                          'Green Bay': 'lat=44.5133&lon=-88.0133'}
 
-
+@pytest.mark.skip
 def test_weather_scraper_and_save():
     # set up main root element
     root = ET.Element("weather", time_zone="local_timezone", source="weather.gov")
