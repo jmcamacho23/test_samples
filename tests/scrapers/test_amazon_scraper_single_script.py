@@ -44,7 +44,7 @@ def test_amazon_scraper():
 
         soup = BeautifulSoup(station.text, 'html.parser')
 
-        subscribe_price = soup.find('span', id='sns-tiered-price').text
+        subscribe_price = soup.find('span', id='subscriptionPrice').find('span', class_='a-offscreen').text
         subscribe_price_formatted = subscribe_price.split('(')[0].replace('$', '').split()[0]
         price_single = soup.find('div', id='corePrice_feature_div').find('span', class_='a-offscreen').text
         price_single_formatted = price_single.replace('$', '').split()[0]
