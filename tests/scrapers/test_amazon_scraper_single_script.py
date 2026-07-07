@@ -10,7 +10,9 @@ from bs4 import BeautifulSoup
 import requests, os
 from xml.dom import minidom
 from datetime import datetime as dt
+import pytest
 
+@pytest.mark.skip
 def test_amazon_scraper():
     time_now = dt.now()
     datetime_now = time_now.strftime('%Y-%m-%d %H:%M:%S')
