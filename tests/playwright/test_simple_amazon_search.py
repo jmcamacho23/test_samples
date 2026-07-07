@@ -35,7 +35,7 @@ async def test_simple_amazon_search():
         await page.locator("#nav-search-submit-button").click()  # use search by clicking instead
         await page.locator("h2[aria-label*='Green Max Lawn Food, 33.33 lbs.']").first.click()
         print(f"Page title is now {await page.title()}")
-        product_price = page.locator("div[data-feature-name='corePrice']").locator("span[class='a-offscreen']").first
+        product_price = page.locator("div[data-feature-name='corePrice']").locator("span[aria-hidden='true']").first
         product_price_text = product_price.text_content()
         print(f'The product price is: {await product_price_text}')
         assert product_price is not None
