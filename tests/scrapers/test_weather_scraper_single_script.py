@@ -25,7 +25,7 @@ base_url = 'https://forecast.weather.gov/MapClick.php?'
 urls_alias_dictionary = {'NYC': 'lat=40.714270000000056&lon=-74.00596999999993', 'LA': 'lat=34.052238&lon=-118.243344',
                          'Green Bay': 'lat=44.5133&lon=-88.0133'}
 
-@pytest.mark.skip
+
 def test_weather_scraper_and_save():
     # set up main root element
     root = ET.Element("weather", time_zone="local_timezone", source="weather.gov")
@@ -50,7 +50,10 @@ def test_weather_scraper_and_save():
         temp_value_cleaned = temp_value.replace("°F", "")
         humidity_value = soup.find('div', id='current_conditions_detail').find_all('tr')[0].text
         humidity_value_cleaned = humidity_value.replace('Humidity', '').strip()
-        time_observed = soup.find('div', id='current_conditions_detail').find_all('tr')[6].text
+        time_observed_all_tr = soup.find('div', id='current_conditions_detail').find_all('tr')
+        time_observed_count_index = (len(time_observed_all_tr) - 1) # because sometimes rows are different
+        time_observed = soup.find('div', id='current_conditions_detail').find_all('tr')[time_observed_count_index].text
+
         time_observed_cleaned = time_observed.replace("Last update", "").strip()
 
         time_cleaned = re.sub(r'\s[A-Za-z]{3}$', ' ', time_observed_cleaned).upper() + f" {time_now.year}"
