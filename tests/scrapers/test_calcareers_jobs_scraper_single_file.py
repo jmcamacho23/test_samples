@@ -41,13 +41,14 @@ async def test_calcareers_jobs_scraper():
     calcareers_soup = BeautifulSoup(html_content_for_bs4, 'html.parser')
 
     calcareers_job_tiles = calcareers_soup.find_all('div', id=re.compile('cphMainContent_rptResults_pnlCardContainer'))
+    sorted_jobs = sorted(calcareers_job_tiles, key=lambda tag: tag.text.strip())
     count = len(calcareers_job_tiles)
     print(f'CalCareers jobs list ({count}): ')
     if not calcareers_job_tiles:
         print("No jobs found")
         return
 
-    for job in calcareers_job_tiles:
+    for job in sorted_jobs:
         title = job.find('a', id=re.compile('cphMainContent_rptResults_hlViewJobPosting')).text
         actual_title = job.find('div', class_='working-title details row').find_all('div')[1].text.strip()
         link = job.find('a', id=re.compile('cphMainContent_rptResults_hlViewJobPosting')).get('href').strip()
