@@ -1,7 +1,6 @@
 """
 Author: Jose Camacho
 a beautifulsoup scraper integrated with Playwright to bypass a javascript-loaded page
-this gets the list of jobs marked as 'Classified' (based on url vars) and lists them out
 before running, in terminal you must install Playwright, and BeautifulSoup through pip ('pip install playwright', etc.)
 then run the command 'playwright install' in terminal
 """
@@ -15,30 +14,55 @@ from playwright.async_api import async_playwright
 async def test_calcareers_jobs_scraper():
     user_agent = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'}
     # location for Fresno County is 85, but can lose the url var if an update is made in the search
-    calcareers_url = 'https://calcareers.ca.gov/CalHRPublic/Search/JobSearchResults.aspx#locid=85'
+    calcareers_url = 'https://calcareers.ca.gov/CalHRPublic/Search/JobSearchResults.aspx#empty'
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True, slow_mo=1000, args=["--start-maximized"])
-        ccpage =  await browser.new_page()
+        browser = await p.chromium.launch(headless=False, slow_mo=1000, args=["--start-maximized"])
+        ccpage =  await browser.new_page(no_viewport=True)
         await ccpage.set_extra_http_headers(user_agent)
 
         print(f'Going to CalCareers now...')
         await ccpage.goto(calcareers_url, wait_until="networkidle")
+        try:
+            toast = ccpage.locator("div[class='toast-title']")
+            await toast.click()
+        except IndexError():
+            pass
 
         amount_dropdown = ccpage.locator('select[id="cphMainContent_ddlRowCount"]')
         await amount_dropdown.click()
         await amount_dropdown.select_option(value="100")
-        county_dropdown = ccpage.locator('td[id="cphMainContent_ddlLocation_B-1"]')
-        await county_dropdown.click()
-        await county_dropdown.press_sequentially("Fresno County") # since it loses the location id var
+        refine_icon = ccpage.locator('#filterIcon')
+        await refine_icon.click()
+        posted_within_dropdown = ccpage.locator('td[id="cphMainContent_ddlPostedInLast_B-1"]')
+        await posted_within_dropdown.click()
+        await posted_within_dropdown.press_sequentially("7 Days", delay=0) # since it loses the location id var
+        await ccpage.keyboard.press("Enter")
+        work_type_dropdown = ccpage.locator('td[id="cphMainContent_ddlWorkType_B-1"]')
+        await work_type_dropdown.click()
+        await work_type_dropdown.press_sequentially("Permanent", delay=0)
+        await ccpage.keyboard.press("Enter")
+        schedule_dropdown = ccpage.locator('td[id="cphMainContent_ddlWorkSchedlue_B-1"]')
+        await schedule_dropdown.click()
+        await schedule_dropdown.press_sequentially("Fulltime", delay=0)
         await ccpage.keyboard.press("Enter")
         await ccpage.locator('input[value="Update Results"]').click()
 
-        html_content_for_bs4 = await ccpage.content()
+        job_listings = []
+
+        job_listings.append(await ccpage.content())
+        paging_present = ccpage.locator('div[id="paging"]')
+        await paging_present.click()
+        paging_amount = (await ccpage.locator('div.pagination a').count()-1)
+        for page in range(1,paging_amount):
+            page_to_click = page+1
+            await ccpage.locator('div[id="paging"]').locator('a').nth(page_to_click).click()
+            job_listings.append(await ccpage.content())
+        all_one_job_td = "|||".join(job_listings)
         await browser.close()
         print('Done getting job info from CalCareers')
 
-    calcareers_soup = BeautifulSoup(html_content_for_bs4, 'html.parser')
+    calcareers_soup = BeautifulSoup(all_one_job_td, 'html.parser')
 
     calcareers_job_tiles = calcareers_soup.find_all('div', id=re.compile('cphMainContent_rptResults_pnlCardContainer'))
     sorted_jobs = sorted(calcareers_job_tiles, key=lambda tag: tag.text.strip())
@@ -60,5 +84,5 @@ async def test_calcareers_jobs_scraper():
         if link and not link.startswith('http'):
             link = f'https://calcareers.ca.gov{link}'
 
-        print(f'{actual_title} ({title}) | {pay} | {schedule} | {work_place}')
+        print(f'{title} ({actual_title}) | {pay} | {schedule} | {work_place}')
         print(f'-- {link}')
