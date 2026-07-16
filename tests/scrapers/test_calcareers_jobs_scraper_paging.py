@@ -3,21 +3,21 @@ Author: Jose Camacho
 a beautifulsoup scraper integrated with Playwright to bypass a javascript-loaded page
 before running, in terminal you must install Playwright, and BeautifulSoup through pip ('pip install playwright', etc.)
 then run the command 'playwright install' in terminal
+this is a single-file approach to searching a page with multiple results and paging through them to get
+them all using Playwright, and then BeautifulSoup to parse
 """
 import re
 import pytest
 from bs4 import BeautifulSoup
-import asyncio
 from playwright.async_api import async_playwright
 
 @pytest.mark.asyncio
-async def test_calcareers_jobs_scraper():
+async def test_calcareers_jobs_scraper_paging():
     user_agent = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'}
-    # location for Fresno County is 85, but can lose the url var if an update is made in the search
     calcareers_url = 'https://calcareers.ca.gov/CalHRPublic/Search/JobSearchResults.aspx#empty'
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False, slow_mo=1000, args=["--start-maximized"])
+        browser = await p.chromium.launch(headless=False, slow_mo=800, args=["--start-maximized"]) # needs to be slowed because of their animation delays
         ccpage =  await browser.new_page(no_viewport=True)
         await ccpage.set_extra_http_headers(user_agent)
 
@@ -48,13 +48,12 @@ async def test_calcareers_jobs_scraper():
         await ccpage.keyboard.press("Enter")
         await ccpage.locator('input[value="Update Results"]').click()
 
-        job_listings = []
+        job_listings = [await ccpage.content()]
 
-        job_listings.append(await ccpage.content())
         paging_present = ccpage.locator('div[id="paging"]')
         await paging_present.click()
-        paging_amount = (await ccpage.locator('div.pagination a').count()-1)
-        for page in range(1,paging_amount):
+        paging_amount = (await ccpage.locator('div.pagination a').count()-1) # since we are not clicking on page 1
+        for page in range(1,paging_amount): # start after page 1
             page_to_click = page+1
             await ccpage.locator('div[id="paging"]').locator('a').nth(page_to_click).click()
             job_listings.append(await ccpage.content())
@@ -62,12 +61,12 @@ async def test_calcareers_jobs_scraper():
         await browser.close()
         print('Done getting job info from CalCareers')
 
+    # now that all pages are joined, parse the results of all those pages
     calcareers_soup = BeautifulSoup(all_one_job_td, 'html.parser')
 
     calcareers_job_tiles = calcareers_soup.find_all('div', id=re.compile('cphMainContent_rptResults_pnlCardContainer'))
     sorted_jobs = sorted(calcareers_job_tiles, key=lambda tag: tag.text.strip())
-    count = len(calcareers_job_tiles)
-    print(f'CalCareers jobs list ({count}): ')
+    print(f'CalCareers jobs list ({len(calcareers_job_tiles)}): ')
     if not calcareers_job_tiles:
         print("No jobs found")
         return

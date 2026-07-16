@@ -4,6 +4,7 @@ a beautifulsoup scraper integrated with Playwright to bypass a javascript-loaded
 this gets the list of jobs marked as 'Classified' (based on url vars) and lists them out
 before running, in terminal you must install Playwright, and BeautifulSoup through pip ('pip install playwright', etc.)
 then run the command 'playwright install' in terminal
+this is a single-file approach
 """
 
 from bs4 import BeautifulSoup
